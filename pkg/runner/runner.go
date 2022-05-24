@@ -173,7 +173,7 @@ func (runner *runnerImpl) NewPlanExecutor(plan *model.Plan) common.Executor {
 							if runner.config.AutoRemove && isLastRunningContainer(s, r) {
 								var cancel context.CancelFunc
 								if ctx.Err() == context.Canceled {
-									ctx, cancel = context.WithTimeout(WithJobLogger(context.Background(), jobName, rc.Config, &rc.Masks), 5*time.Minute)
+									ctx, cancel = context.WithTimeout(WithJobLogger(context.Background(), rc.Run.JobID, jobName, rc.Config, &rc.Masks), 5*time.Minute)
 									defer cancel()
 								}
 

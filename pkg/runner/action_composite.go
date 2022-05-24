@@ -114,7 +114,7 @@ type compositeSteps struct {
 }
 
 // Executor returns a pipeline executor for all the steps in the job
-func (rc *RunContext) compositeExecutor(action *model.Action) *compositeSteps {
+func (rc *RunContext) compositeExecutor(action *model.Action, parentStepModel *model.Step) *compositeSteps {
 	steps := make([]common.Executor, 0)
 	preSteps := make([]common.Executor, 0)
 	var postExecutor common.Executor
@@ -122,13 +122,13 @@ func (rc *RunContext) compositeExecutor(action *model.Action) *compositeSteps {
 	sf := &stepFactoryImpl{}
 
 	for i, step := range action.Runs.Steps {
-		if step.ID == "" {
-			step.ID = fmt.Sprintf("%d", i)
-		}
-
 		// create a copy of the step, since this composite action could
 		// run multiple times and we might modify the instance
 		stepcopy := step
+
+		if stepcopy.ID == "" {
+			stepcopy.ID = fmt.Sprintf("%s-%d", parentStepModel.ID, i)
+		}
 
 		step, err := sf.newStep(&stepcopy, rc)
 		if err != nil {
@@ -137,9 +137,9 @@ func (rc *RunContext) compositeExecutor(action *model.Action) *compositeSteps {
 			}
 		}
 
-		preSteps = append(preSteps, step.pre())
+		preSteps = append(preSteps, useStepLogger(rc, step.getStepModel(), stepStagePre, step.pre()))
 
-		steps = append(steps, func(ctx context.Context) error {
+		steps = append(steps, useStepLogger(rc, step.getStepModel(), stepStagePre, func(ctx context.Context) error {
 			logger := common.Logger(ctx)
 			err := step.main()(ctx)
 			if err != nil {
@@ -150,13 +150,14 @@ func (rc *RunContext) compositeExecutor(action *model.Action) *compositeSteps {
 				common.SetJobError(ctx, ctx.Err())
 			}
 			return nil
-		})
+		}))
 
-		// run the post executor in reverse order
+		postExec := useStepLogger(rc, step.getStepModel(), stepStagePost, step.post())
 		if postExecutor != nil {
-			postExecutor = step.post().Finally(postExecutor)
+			// run the post exector in reverse order
+			postExecutor = postExec.Finally(postExecutor)
 		} else {
-			postExecutor = step.post()
+			postExecutor = postExec
 		}
 	}
 

@@ -106,7 +106,7 @@ func (sal *stepActionLocal) getCompositeRunContext(ctx context.Context) *RunCont
 		_, containerActionDir := getContainerActionPaths(sal.getStepModel(), actionDir, sal.RunContext)
 
 		sal.compositeRunContext = newCompositeRunContext(ctx, sal.RunContext, sal, containerActionDir)
-		sal.compositeSteps = sal.compositeRunContext.compositeExecutor(sal.action)
+		sal.compositeSteps = sal.compositeRunContext.compositeExecutor(sal.action, sal.getStepModel())
 	}
 	return sal.compositeRunContext
 }

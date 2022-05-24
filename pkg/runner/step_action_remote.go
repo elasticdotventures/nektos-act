@@ -152,7 +152,7 @@ func (sar *stepActionRemote) getCompositeRunContext(ctx context.Context) *RunCon
 		_, containerActionDir := getContainerActionPaths(sar.getStepModel(), actionLocation, sar.RunContext)
 
 		sar.compositeRunContext = newCompositeRunContext(ctx, sar.RunContext, sar, containerActionDir)
-		sar.compositeSteps = sar.compositeRunContext.compositeExecutor(sar.action)
+		sar.compositeSteps = sar.compositeRunContext.compositeExecutor(sar.action, sar.getStepModel())
 	}
 	return sar.compositeRunContext
 }
